@@ -1,0 +1,13 @@
+# secrets
+config.json
+config.json.tmp
+
+# data produced at runtime
+data/signals.json
+data/watchlist.json
+
+# python
+__pycache__/
+*.pyc
+venv/
+.venv/

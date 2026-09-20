@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaWave — Futures Analysis Terminal</title>
+<link rel="stylesheet" href="/static/css/style.css?v=4">
+<script src="/static/js/lightweight-charts.standalone.production.js?v=4"></script>
+<script>
+  /* CDN fallback only if the bundled copy is somehow missing */
+  if (!window.LightweightCharts) {
+    document.write('<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"><\/script>');
+  }
+</script>
+</head>
+<body>
+<div id="app">
+
+  <!-- ======================= TOP BAR ======================= -->
+  <header id="topbar">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+        <path d="M16 2 L22 8 L16 14 L10 8 Z" fill="#f0b90b"/>
+        <path d="M7 11 L13 17 L7 23 L1 17 Z" fill="#f0b90b" transform="translate(3 0)"/>
+        <path d="M25 11 L31 17 L25 23 L19 17 Z" fill="#f0b90b" transform="translate(-3 0)"/>
+        <path d="M16 20 L22 26 L16 32 L10 26 Z" fill="#f0b90b" transform="translate(0 -4)"/>
+      </svg>
+      <div>
+        <div class="brand-title">ALPHAWAVE</div>
+        <div class="brand-sub">Binance Futures AI Signal Terminal · Analysis only — no orders, no keys</div>
+      </div>
+    </div>
+    <div id="topbar-stats">
+      <div class="stat" id="stat-binance"><span class="dot dot-gray"></span> Binance: <b>…</b></div>
+      <div class="stat" id="stat-fng">Fear&amp;Greed: <b>…</b></div>
+      <div class="stat" id="stat-btc">BTC: <b>…</b></div>
+      <div class="stat" id="stat-eth">ETH: <b>…</b></div>
+      <div class="stat" id="stat-bot"><span class="dot dot-gray"></span> Bot: <b>…</b></div>
+    </div>
+  </header>
+
+  <div id="main">
+    <!-- ======================= SIDEBAR ======================= -->
+    <nav id="sidebar">
+      <button class="nav-btn active" data-tab="dashboard">📊 Dashboard</button>
+      <button class="nav-btn" data-tab="markets">🪙 Markets (All Coins)</button>
+      <button class="nav-btn" data-tab="chart">📈 Chart &amp; Indicators</button>
+      <button class="nav-btn" data-tab="signals">🎯 AI Signals</button>
+      <button class="nav-btn" data-tab="random">🎲 Random Coin Funnel</button>
+      <button class="nav-btn" data-tab="news">📰 News &amp; Fundamentals</button>
+      <button class="nav-btn" data-tab="tools">🧰 30 Trading Tools</button>
+      <button class="nav-btn" data-tab="ai">🤖 AI Providers</button>
+      <button class="nav-btn" data-tab="bot">✈️ Telegram Bot</button>
+      <div class="nav-footer">
+        <div class="disclaimer">⚠ Educational analysis tool.<br>Not financial advice.<br>Never places orders.</div>
+      </div>
+    </nav>
+
+    <!-- ======================= CONTENT ======================= -->
+    <section id="content">
+
+      <!-- ============ DASHBOARD ============ -->
+      <div class="tab active" id="tab-dashboard">
+        <h2>Market Dashboard</h2>
+        <div class="cards" id="dash-cards"></div>
+        <div class="grid2">
+          <div class="panel">
+            <h3>🔥 Top Gainers (24h)</h3>
+            <table class="tbl" id="dash-gainers"></table>
+          </div>
+          <div class="panel">
+            <h3>💧 Top Losers (24h)</h3>
+            <table class="tbl" id="dash-losers"></table>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="panel">
+            <h3>🎯 Latest Signals</h3>
+            <div id="dash-signals" class="signal-list"></div>
+          </div>
+          <div class="panel">
+            <h3>📰 Latest News</h3>
+            <div id="dash-news" class="news-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ MARKETS ============ -->
+      <div class="tab" id="tab-markets">
+        <h2>All Binance Futures Coins (USDT-M Perpetuals)</h2>
+        <div class="toolbar">
+          <input id="mk-search" type="text" placeholder="Search coin (BTC, SOL, DOGE…)">
+          <select id="mk-sort">
+            <option value="volume_usd">Sort: Volume</option>
+            <option value="change_pct">Sort: 24h Change</option>
+            <option value="funding_pct">Sort: Funding</option>
+            <option value="symbol">Sort: Name</option>
+          </select>
+          <button id="mk-refresh" class="btn">⟳ Refresh</button>
+          <span id="mk-count" class="muted"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="tbl" id="mk-table">
+            <thead><tr>
+              <th>#</th><th>Symbol</th><th>Price</th><th>24h %</th><th>24h High</th><th>24h Low</th>
+              <th>Volume (M$)</th><th>Funding %</th><th>Trades</th><th></th><th></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============ CHART ============ -->
+      <div class="tab" id="tab-chart">
+        <h2>Live Chart · Indicators · Buy/Sell Highlights</h2>
+        <div class="toolbar">
+          <input id="ch-symbol" type="text" value="BTCUSDT" placeholder="SYMBOL">
+          <div class="tf-group" id="ch-tf">
+            <button data-tf="1m">1m</button><button data-tf="5m">5m</button>
+            <button data-tf="15m" class="on">15m</button><button data-tf="30m">30m</button>
+            <button data-tf="1h">1h</button><button data-tf="4h">4h</button>
+            <button data-tf="1d">1d</button>
+          </div>
+          <select id="ch-style" title="Chart / candle style">
+            <option value="candles">🕯 Candles</option>
+            <option value="hollow">◻ Hollow Candles</option>
+            <option value="bars">📊 Bars (OHLC)</option>
+            <option value="line">〰 Line</option>
+            <option value="area">▨ Area</option>
+            <option value="baseline">⌁ Baseline</option>
+            <option value="heikin">🌀 Heikin-Ashi</option>
+          </select>
+          <button id="ch-load" class="btn btn-primary">Load / Watch</button>
+          <label class="chk"><input type="checkbox" id="ch-autorefresh" checked> Auto-refresh</label>
+          <span id="ch-live" class="live-badge"><span class="dot dot-green pulse"></span>LIVE <b id="ch-live-price">—</b> <span id="ch-live-arrow"></span></span>
+          <a id="ch-png" class="btn" download>⬇ PNG</a>
+        </div>
+        <div class="toolbar">
+          <span class="muted">Overlays:</span>
+          <label class="chk"><input type="checkbox" class="ov" value="ema9"> EMA9</label>
+          <label class="chk"><input type="checkbox" class="ov" value="ema20" checked> EMA20</label>
+          <label class="chk"><input type="checkbox" class="ov" value="ema50" checked> EMA50</label>
+          <label class="chk"><input type="checkbox" class="ov" value="ema200"> EMA200</label>
+          <label class="chk"><input type="checkbox" class="ov" value="hma9"> Hull MA</label>
+          <label class="chk"><input type="checkbox" class="ov" value="bb_upper"> Bollinger</label>
+          <label class="chk"><input type="checkbox" class="ov" value="kc_upper"> Keltner</label>
+          <label class="chk"><input type="checkbox" class="ov" value="vwap"> VWAP</label>
+          <label class="chk"><input type="checkbox" class="ov" value="supertrend"> SuperTrend</label>
+          <label class="chk"><input type="checkbox" class="ov" value="psar"> Parabolic SAR</label>
+          <label class="chk"><input type="checkbox" class="ov" value="ichimoku"> Ichimoku</label>
+          <label class="chk"><input type="checkbox" class="ov" value="pivots"> Pivot Points</label>
+          <label class="chk"><input type="checkbox" class="ov" value="fibs"> Fib Levels</label>
+          <label class="chk"><input type="checkbox" id="ch-marks" checked> ▲▼ Buy/Sell marks</label>
+          <span class="muted">Sub:</span>
+          <select id="ch-sub">
+            <option value="rsi">RSI</option><option value="macd">MACD</option>
+            <option value="stoch_k">Stochastic</option><option value="stochrsi">Stoch RSI</option>
+            <option value="cci">CCI</option><option value="willr">Williams %R</option>
+            <option value="mfi">MFI</option><option value="adx">ADX + DI</option>
+            <option value="obv">OBV</option><option value="roc">ROC</option>
+            <option value="atr">ATR</option><option value="cvd">CVD</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div id="chart-zone">
+          <div id="ch-main"></div>
+          <div id="ch-subpane"></div>
+        </div>
+        <div id="ch-info" class="ch-info"></div>
+        <div class="grid2">
+          <div class="panel">
+            <h3>Strategy Votes (live on this timeframe)</h3>
+            <div id="ch-votes"></div>
+          </div>
+          <div class="panel">
+            <h3>SMC Zones · Unfilled FVGs &amp; Order Blocks</h3>
+            <div id="ch-zones" class="mono-sm"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ SIGNALS ============ -->
+      <div class="tab" id="tab-signals">
+        <h2>Generate AI Signal — Selected Coin</h2>
+        <div class="panel">
+          <div class="toolbar">
+            <input id="sg-symbol" type="text" value="BTCUSDT" placeholder="SYMBOL (e.g. BTC, ETHUSDT)">
+            <select id="sg-interval">
+              <option>1m</option><option>5m</option><option selected>15m</option>
+              <option>30m</option><option>1h</option><option>4h</option><option>1d</option>
+            </select>
+            <select id="sg-ai">
+              <option value="assist">AI: assist (TA decides, AI explains)</option>
+              <option value="full">AI: full (AI may adjust levels)</option>
+              <option value="off">AI: off (free local engine only)</option>
+            </select>
+            <button id="sg-run" class="btn btn-primary btn-big">⚡ GENERATE SIGNAL</button>
+          </div>
+          <div class="toolbar" id="sg-strategies">
+            <span class="muted">Strategies:</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>🧠 Accuracy Engine v2 — learned engine weights</h3>
+          <div class="toolbar">
+            <button id="ac-load" class="btn"> Load learned weights</button>
+            <span class="muted">walk-forward replay of all 8 engines on this coin/timeframe + learning from live TP/SL outcomes</span>
+          </div>
+          <div id="ac-out" class="mono-sm"></div>
+        </div>
+        <div id="sg-result"></div>
+        <div class="panel">
+          <h3>Signal History (journal)</h3>
+          <div id="sg-history" class="signal-list"></div>
+        </div>
+      </div>
+
+      <!-- ============ RANDOM FUNNEL ============ -->
+      <div class="tab" id="tab-random">
+        <h2>🎲 Random Coin Signal — Best-of Funnel</h2>
+        <p class="muted">Universe (best ≤1000 by volume) → Top 100 → Top 10 → <b>Best 1</b> → full signal. Takes ~30–90 s.</p>
+        <div class="panel">
+          <div class="toolbar">
+            <select id="rd-interval">
+              <option>5m</option><option selected>15m</option><option>30m</option>
+              <option>1h</option><option>4h</option>
+            </select>
+            <select id="rd-ai">
+              <option value="assist">AI: assist</option>
+              <option value="full">AI: full</option>
+              <option value="off">AI: off (free)</option>
+            </select>
+            <button id="rd-run" class="btn btn-primary btn-big">🎲 FIND BEST COIN &amp; SIGNAL</button>
+          </div>
+          <div id="rd-progress" class="progress-feed mono-sm"></div>
+        </div>
+        <div id="rd-stages"></div>
+        <div id="rd-result"></div>
+      </div>
+
+      <!-- ============ NEWS ============ -->
+      <div class="tab" id="tab-news">
+        <h2>Fundamental News &amp; Sentiment</h2>
+        <div class="toolbar">
+          <input id="nw-coin" type="text" placeholder="Filter by coin (blank = all, e.g. BTC)">
+          <button id="nw-load" class="btn btn-primary">Load News</button>
+          <span id="nw-sentiment" class="badge"></span>
+        </div>
+        <div class="cards" id="nw-fng-card"></div>
+        <div class="grid2">
+          <div class="panel">
+            <h3>News Feed (RSS: CoinTelegraph · CoinDesk · Decrypt · Bitcoin Magazine)</h3>
+            <div id="nw-list" class="news-list"></div>
+          </div>
+          <div class="panel">
+            <h3>Binance Announcements</h3>
+            <div id="nw-ann" class="news-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TOOLS ============ -->
+      <div class="tab" id="tab-tools">
+        <h2>🧰 30 Trading &amp; Analysis Tools</h2>
+        <div class="toolbar">
+          <input id="tl-symbol" type="text" value="BTCUSDT" placeholder="Symbol for tools that need one">
+        </div>
+        <div id="tl-grid" class="tools-grid"></div>
+        <div class="panel" id="tl-output-panel" style="display:none">
+          <h3 id="tl-output-title">Result</h3>
+          <div id="tl-output" class="mono-sm"></div>
+        </div>
+      </div>
+
+      <!-- ============ AI ============ -->
+      <div class="tab" id="tab-ai">
+        <h2>🤖 AI Providers &amp; Free-Fallback Chain</h2>
+        <p class="muted">Chain: Groq (4 models) → OpenRouter (3+ free models) → Ollama (2 local models, free &amp; unlimited) → Custom endpoint → <b>Built-in local engine (always free — signals never fail)</b>. Keys rotate automatically; failed models cool down and are retried later.</p>
+        <div class="panel">
+          <div class="toolbar">
+            <label>AI mode:</label>
+            <select id="ai-mode">
+              <option value="assist">assist — TA decides numbers, AI writes reasoning</option>
+              <option value="full">full — AI may adjust entry/SL/TP within guardrails</option>
+              <option value="off">off — 100% free built-in engine</option>
+            </select>
+            <button id="ai-save" class="btn">Save mode</button>
+            <button id="ai-refresh" class="btn">⟳ Status</button>
+          </div>
+        </div>
+        <div id="ai-providers"></div>
+        <div class="panel">
+          <h3>Edit keys / models (saved to config.json)</h3>
+          <div class="toolbar"><span class="muted">Provider:</span>
+            <select id="ai-cfg-prov"><option>groq</option><option>openrouter</option><option>ollama</option><option>custom</option></select>
+            <button id="ai-cfg-load" class="btn">Load</button>
+          </div>
+          <textarea id="ai-cfg-json" rows="12" class="mono-sm" spellcheck="false"></textarea>
+          <div class="toolbar">
+            <button id="ai-cfg-save" class="btn btn-primary">Save provider config</button>
+            <span id="ai-cfg-msg" class="muted"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ BOT ============ -->
+      <div class="tab" id="tab-bot">
+        <h2>✈️ Telegram Bot Control</h2>
+        <div class="panel">
+          <div class="toolbar">
+            <input id="bt-token" type="password" placeholder="Bot token from @BotFather (e.g. 123456:ABC-DEF…)">
+            <button id="bt-save" class="btn">Save token</button>
+            <button id="bt-start" class="btn btn-primary">▶ Start bot</button>
+            <button id="bt-stop" class="btn btn-danger">■ Stop bot</button>
+            <span id="bt-status" class="badge"></span>
+          </div>
+          <p class="muted">1) Open Telegram → talk to <b>@BotFather</b> → /newbot → copy the token here. 2) Start the bot. The command menu appears automatically in Telegram. Every feature of this app (signals, random funnel, analysis, news, charts, 30 tools, AI status) is available inside Telegram — for every whitelisted user, each with their own personal interface.</p>
+        </div>
+        <div class="panel">
+          <h3>👥 Multi-User Access Control — <span id="ac-count" class="badge yellow">0/100</span></h3>
+          <div class="toolbar">
+            <label>Mode:</label>
+            <select id="ac-mode">
+              <option value="open">open — anyone can use the bot</option>
+              <option value="whitelist">whitelist — only listed IDs (+admins)</option>
+            </select>
+            <button id="ac-mode-save" class="btn">Save mode</button>
+            <label>Max users:</label>
+            <input id="ac-max" type="text" style="width:80px" value="100">
+            <button id="ac-max-save" class="btn">Save</button>
+          </div>
+          <div class="toolbar">
+            <input id="ac-id" type="text" placeholder="Telegram user ID (e.g. 123456789)">
+            <input id="ac-note" type="text" placeholder="Note / name (optional)">
+            <button id="ac-add" class="btn btn-primary">+ Add user</button>
+            <button id="ac-refresh" class="btn">⟳</button>
+          </div>
+          <div class="toolbar">
+            <textarea id="ac-bulk" rows="2" style="flex:1" placeholder="Bulk import — paste many IDs separated by commas / spaces / new lines (up to the max)"></textarea>
+            <button id="ac-import" class="btn">⬆ Import IDs</button>
+          </div>
+          <div class="toolbar">
+            <label>Admins (can /allow /revoke from Telegram):</label>
+            <input id="ac-admins" type="text" style="flex:1" placeholder="comma-separated IDs, e.g. 11111111,22222222">
+            <button id="ac-admins-save" class="btn">Save admins</button>
+          </div>
+          <div class="table-wrap" style="max-height:280px">
+            <table class="tbl" id="ac-table">
+              <thead><tr><th>#</th><th>User ID</th><th>Note</th><th>Added</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="muted">Whitelist mode එකේදී list එකේ නැති user ලාට bot එක වැඩ නොකරයි — ඔවුන්ට /request යවා
+          admin ලාගෙන් approve විය හැක. Users 100ක් දක්වා default (max_users වෙනස් කළ හැක).</p>
+        </div>
+        <div class="panel">
+          <h3>Bot logs (live diagnostics)</h3>
+          <div id="bt-logs" class="mono-sm" style="max-height:230px;overflow-y:auto"></div>
+        </div>
+        <div class="panel">
+          <h3>Bot command list (30+ features)</h3>
+          <div id="bt-commands" class="mono-sm"></div>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</div>
+
+<!-- Signal card template -->
+<template id="tpl-signal">
+  <div class="signal-card">
+    <div class="sg-head">
+      <span class="sg-coin"></span>
+      <span class="sg-side"></span>
+      <span class="sg-tf badge"></span>
+      <span class="sg-conf badge"></span>
+      <span class="sg-ai badge"></span>
+      <span class="sg-time muted"></span>
+    </div>
+    <div class="sg-grid">
+      <div class="sg-cell"><label>Live Price</label><b class="f-live"></b></div>
+      <div class="sg-cell"><label>Entry</label><b class="f-entry"></b></div>
+      <div class="sg-cell sl"><label>Stop Loss</label><b class="f-sl"></b></div>
+      <div class="sg-cell tp"><label>Take Profit</label><b class="f-tp"></b></div>
+      <div class="sg-cell"><label>R:R</label><b class="f-rr"></b></div>
+      <div class="sg-cell lev"><label>Leverage</label><b class="f-lev"></b></div>
+      <div class="sg-cell"><label>SL distance</label><b class="f-slpct"></b></div>
+    </div>
+    <div class="sg-tps"></div>
+    <div class="sg-reason"></div>
+    <details class="sg-breakdown"><summary>Strategy breakdown</summary><div class="sg-bd-body"></div></details>
+  </div>
+</template>
+
+<div id="toast-zone"></div>
+<script src="/static/js/app.js?v=4"></script>
+</body>
+</html>
